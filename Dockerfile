@@ -1,4 +1,6 @@
-FROM node:12-slim
+FROM node:19-slim
+
+WORKDIR /app
 
 # Install Chromium.
 RUN apt-get update \
@@ -9,13 +11,13 @@ RUN apt-get update \
     apt-get install -y google-chrome-stable && \
     rm -rf /var/lib/apt/lists/*s
 
-RUN npm i whatsapp-web.js && npm i qrcode-terminal && npm i express && npm i express-validator
+COPY package*.json ./
+RUN npm install
 
-RUN mkdir /app
-COPY app.js /app/app.js
+COPY . .
 
 # Run everything after as non-privileged user.
 RUN useradd -ms /bin/bash wppuser
 USER wppuser
 
-CMD ["node","/app/app.js"]
+CMD ["npm","start"]
