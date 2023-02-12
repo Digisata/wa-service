@@ -1,8 +1,8 @@
-const qrcode = require("qrcode-terminal");
-const { Client } = require("whatsapp-web.js");
-const express = require("express");
-const { body, validationResult } = require("express-validator");
-const http = require("http");
+const qrcode = require('qrcode-terminal');
+const { Client } = require('whatsapp-web.js');
+const express = require('express');
+const { body, validationResult } = require('express-validator');
+const http = require('http');
 
 const port = process.env.PORT || 8000;
 
@@ -18,49 +18,62 @@ app.use(
 
 const client = new Client({
   puppeteer: {
-    args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    args: ['--no-sandbox', '--disable-setuid-sandbox'],
   },
 });
 
-client.on("qr", (qr) => {
+client.on('qr', (qr) => {
   qrcode.generate(qr, { small: true });
 });
 
-client.on("ready", () => {
-  console.log("Client is ready!");
+client.on('ready', () => {
+  console.log('Client is ready!');
 });
 
-client.on("message", (message) => {
-  if (message.body === "!ping") {
-    message.reply("pong");
+client.on('message', (message) => {
+  if (message.body === '!ping') {
+    message.reply('pong');
   }
 });
 
-let myVar;
-client.on("message_create", (message) => {
-  if (message.body === "!spam") {
-    myVar = setInterval(myTimer, 300);
-    function myTimer() {
-      client.sendMessage(message.to, "😞");
+let myIntervals = {};
+client.on('message_create', (message) => {
+  if (client.info.wid._serialized === message.from) {
+    if (message.body.includes('!spam')) {
+      const myMessage = message.body.split(' ');
+      myIntervals[myMessage[1]] = setInterval(() => {
+        client.sendMessage(
+          message.to,
+          `(${myMessage[1]}) ${myMessage.slice(3, myMessage.length).join(' ')}`
+        );
+      }, Number(myMessage[2]));
     }
-  }
 
-  if (message.body === "!stop") {
-    clearInterval(myVar);
+    if (message.body === '!stop-all') {
+      for (const property in myIntervals) {
+        clearInterval(myIntervals[property]);
+      }
+    }
+
+    if (message.body.includes('!stop')) {
+      const myMessage = message.body.split(' ');
+      clearInterval(myIntervals[myMessage[1]]);
+      delete myIntervals[myMessage[1]];
+    }
   }
 });
 
 client.initialize();
 
 const phoneNumberFormatter = function (number) {
-  let formatted = number.replace(/\D/g, "");
+  let formatted = number.replace(/\D/g, '');
 
-  if (formatted.startsWith("0")) {
-    formatted = "62" + formatted.substr(1);
+  if (formatted.startsWith('0')) {
+    formatted = '62' + formatted.substr(1);
   }
 
-  if (!formatted.endsWith("@c.us")) {
-    formatted += "@c.us";
+  if (!formatted.endsWith('@c.us')) {
+    formatted += '@c.us';
   }
 
   return formatted;
@@ -68,8 +81,8 @@ const phoneNumberFormatter = function (number) {
 
 // Send message
 app.post(
-  "/send-message",
-  [body("number").notEmpty(), body("message").notEmpty()],
+  '/send-message',
+  [body('number').notEmpty(), body('message').notEmpty()],
   async (req, res) => {
     const errors = validationResult(req).formatWith(({ msg }) => {
       return msg;
@@ -103,5 +116,5 @@ app.post(
 );
 
 server.listen(port, function () {
-  console.log("App running on *: " + port);
+  console.log('App running on *: ' + port);
 });
