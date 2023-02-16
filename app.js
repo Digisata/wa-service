@@ -41,18 +41,23 @@ client.on('message_create', (message) => {
   if (client.info.wid._serialized === message.from) {
     if (message.body.includes('!spam')) {
       const myMessage = message.body.split(' ');
-      myIntervals[myMessage[1]] = setInterval(() => {
-        client.sendMessage(
-          message.to,
-          `(${myMessage[1]}) ${myMessage.slice(3, myMessage.length).join(' ')}`
-        );
-      }, Number(myMessage[2]));
+      if (!(myMessage[1] in myIntervals)) {
+        myIntervals[myMessage[1]] = setInterval(() => {
+          client.sendMessage(
+            message.to,
+            `(${myMessage[1]}) ${myMessage
+              .slice(3, myMessage.length)
+              .join(' ')}`
+          );
+        }, Number(myMessage[2]));
+      }
     }
 
     if (message.body === '!stop-all') {
       for (const property in myIntervals) {
         clearInterval(myIntervals[property]);
       }
+      myIntervals = {};
     }
 
     if (message.body.includes('!stop')) {
